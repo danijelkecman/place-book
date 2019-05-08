@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
+import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import com.cxromos.placebook.R
@@ -27,6 +28,8 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import kotlinx.android.synthetic.main.activity_bookmark_detail.*
+import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -46,8 +49,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_maps)
+
     val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
     mapFragment.getMapAsync(this)
+    setupToolbar()
     setupLocationClient()
 
     Places.initialize(applicationContext, getString(R.string.google_maps_key))
@@ -58,6 +63,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
     mapsViewModel = ViewModelProviders.of(this).get(MapsViewModel::class.java)
 
     createBookmarkMarkerObserver()
+  }
+
+  private fun setupToolbar() {
+    setSupportActionBar(toolbar)
+    val toggle = ActionBarDrawerToggle(this,  drawerLayout, toolbar, R.string.open_drawer, R.string.close_drawer)
+    toggle.syncState()
   }
 
   override fun onMapReady(googleMap: GoogleMap) {
@@ -136,7 +147,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
     marker?.showInfoWindow()
   }
 
-  private fun addPlaceMarker(bookmark: MapsViewModel.BookmarkMarkerView): Marker? {
+  private fun addPlaceMarker(bookmark: MapsViewModel.BookmarkView): Marker? {
     val marker = map.addMarker(MarkerOptions()
         .position(bookmark.location)
         .title(bookmark.name)
@@ -149,15 +160,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
     return marker
   }
 
-  private fun displayAllBookmarks(bookmarks: List<MapsViewModel.BookmarkMarkerView>) {
+  private fun displayAllBookmarks(bookmarks: List<MapsViewModel.BookmarkView>) {
     for (bookmark in bookmarks) {
       addPlaceMarker(bookmark)
     }
   }
 
   private fun createBookmarkMarkerObserver() {
-    mapsViewModel.getBookmarkMarkerViews()?.observe(
-        this, android.arch.lifecycle.Observer<List<MapsViewModel.BookmarkMarkerView>> {
+    mapsViewModel.getBookmarkViews()?.observe(
+        this, android.arch.lifecycle.Observer<List<MapsViewModel.BookmarkView>> {
       map.clear()
 
       it?.let {
@@ -178,8 +189,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
         }
         marker.remove()
       }
-      is MapsViewModel.BookmarkMarkerView -> {
-        val bookmarkMarkerView = (marker.tag as MapsViewModel.BookmarkMarkerView)
+      is MapsViewModel.BookmarkView -> {
+        val bookmarkMarkerView = (marker.tag as MapsViewModel.BookmarkView)
         marker.hideInfoWindow()
         bookmarkMarkerView.id?.let {
           startBookmarkDetails(it)

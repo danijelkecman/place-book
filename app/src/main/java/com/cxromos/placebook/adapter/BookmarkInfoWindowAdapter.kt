@@ -24,8 +24,8 @@ class BookmarkInfoWindowAdapter(private val context: Activity) : GoogleMap.InfoW
                 imageView.setImageBitmap((marker.tag as MapsActivity.PlaceInfo).image)
             }
 
-            is MapsViewModel.BookmarkMarkerView -> {
-                val bookmarkView = marker.tag as MapsViewModel.BookmarkMarkerView
+            is MapsViewModel.BookmarkView -> {
+                val bookmarkView = marker.tag as MapsViewModel.BookmarkView
                 imageView.setImageBitmap(bookmarkView.getImage(context))
             }
         }

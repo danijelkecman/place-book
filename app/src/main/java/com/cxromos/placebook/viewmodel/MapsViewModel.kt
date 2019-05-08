@@ -17,7 +17,7 @@ class MapsViewModel(application: Application): AndroidViewModel(application) {
     private val TAG = MapsViewModel::class.java.simpleName
 
     private var bookmarkRepo: BookmarkRepo = BookmarkRepo(getApplication())
-    private var bookmarks: LiveData<List<BookmarkMarkerView>>? = null
+    private var bookmarks: LiveData<List<BookmarkView>>? = null
 
     fun addBookmarkFromPlace(place: Place, image: Bitmap) {
         val bookmark = bookmarkRepo.createBookmark()
@@ -34,8 +34,8 @@ class MapsViewModel(application: Application): AndroidViewModel(application) {
         Log.i(TAG, "New bookmark $newId added to the database")
     }
 
-    private fun bookmarkToMarkerView(bookmark: Bookmark): BookmarkMarkerView {
-        return BookmarkMarkerView(
+    private fun bookmarkToBookmarkView(bookmark: Bookmark): BookmarkView {
+        return BookmarkView(
             bookmark.id,
             LatLng(bookmark.latitude, bookmark.longitude),
             bookmark.name,
@@ -43,25 +43,25 @@ class MapsViewModel(application: Application): AndroidViewModel(application) {
         )
     }
 
-    private fun mapBookmarksToMarkerView() {
+    private fun mapBookmarksToBookmarkView() {
         val allBookmarks = bookmarkRepo.allBookmarks
 
         bookmarks = Transformations.map(allBookmarks) { bookmarks ->
             val bookmarkMarkerViews = bookmarks.map { bookmark ->
-                bookmarkToMarkerView(bookmark)
+                bookmarkToBookmarkView(bookmark)
             }
             bookmarkMarkerViews
         }
     }
 
-    fun getBookmarkMarkerViews(): LiveData<List<BookmarkMarkerView>>? {
+    fun getBookmarkViews(): LiveData<List<BookmarkView>>? {
         if (bookmarks == null) {
-            mapBookmarksToMarkerView()
+            mapBookmarksToBookmarkView()
         }
         return bookmarks
     }
 
-    data class BookmarkMarkerView(
+    data class BookmarkView(
         var id: Long? = null,
         var location: LatLng = LatLng(0.0, 0.0),
         var name: String = "",
