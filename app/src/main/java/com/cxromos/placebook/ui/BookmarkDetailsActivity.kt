@@ -1,18 +1,36 @@
 package com.cxromos.placebook.ui
 
+import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
+import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import com.cxromos.placebook.R
+import com.cxromos.placebook.util.ImageUtils
 import com.cxromos.placebook.viewmodel.BookmarkDetailsViewModel
 import kotlinx.android.synthetic.main.activity_bookmark_detail.*
+import java.io.File
+import java.io.IOException
 
-class BookmarkDetailsActivity : AppCompatActivity() {
+class BookmarkDetailsActivity : AppCompatActivity(), PhotoOptionDialogFragment.PhotoOptionDialogListener {
+
   private lateinit var bookmarkDetailsViewModel: BookmarkDetailsViewModel
   private var bookmarkDetailsView: BookmarkDetailsViewModel.BookmarkDetailsView? = null
+  private var photoFile: File? = null
+
+  companion object {
+    private const val REQUEST_CAPTURE_IMAGE = 1
+    private const val REQUEST_GALLERY_IMAGE = 2
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -63,6 +81,10 @@ class BookmarkDetailsActivity : AppCompatActivity() {
         imageViewPlace.setImageBitmap(placeImage)
       }
     }
+
+    imageViewPlace.setOnClickListener {
+      replaceImage()
+    }
   }
 
   private fun saveChanges() {
@@ -90,6 +112,84 @@ class BookmarkDetailsActivity : AppCompatActivity() {
       }
     })
   }
+
+  override fun onCaptureClick() {
+    photoFile = null
+    try {
+      photoFile = ImageUtils.createUniqueImageFile(this)
+      if (photoFile == null) {
+        return
+      }
+    } catch (ex: IOException) {
+      return
+    }
+    val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+    val photoUri = FileProvider.getUriForFile(this, "com.cxromos.placebook.fileprovider", photoFile!!)
+    captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+
+    val intentActivities = packageManager.queryIntentActivities(captureIntent, PackageManager.MATCH_DEFAULT_ONLY)
+    intentActivities
+      .map { it.activityInfo.packageName }
+      .forEach { grantUriPermission(it, photoUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+
+    startActivityForResult(captureIntent, REQUEST_CAPTURE_IMAGE)
+  }
+
+  override fun onPickClick() {
+    val pickIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+    startActivityForResult(pickIntent, REQUEST_GALLERY_IMAGE)
+  }
+
+  private fun replaceImage() {
+    val newFragment = PhotoOptionDialogFragment.newInstance(this)
+    newFragment?.show(supportFragmentManager, "photoOptionDialog")
+  }
+
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (resultCode == Activity.RESULT_OK) {
+      when(requestCode) {
+        REQUEST_CAPTURE_IMAGE -> {
+          val photoFile = photoFile ?: return
+          val uri = FileProvider.getUriForFile(this, "com.cxromos.placebook.fileprovider", photoFile)
+          revokeUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+          val image = getImageWithPath(photoFile.absolutePath)
+          image?.let {
+            updateImage(it)
+          }
+        }
+        REQUEST_GALLERY_IMAGE -> {
+          val imageUri = data!!.data
+          val image = getImageWithAuthority(imageUri)
+          image?.let { updateImage(it) }
+        }
+      }
+    }
+  }
+
+  private fun updateImage(image: Bitmap) {
+    val bookmarkView = bookmarkDetailsView ?: return
+    imageViewPlace.setImageBitmap(image)
+    bookmarkView.setImage(this, image)
+  }
+
+  private fun getImageWithPath(filePath: String): Bitmap? {
+    return ImageUtils.decodeFileToSize(filePath,
+      resources.getDimensionPixelSize(R.dimen.default_image_width),
+      resources.getDimensionPixelSize(R.dimen.default_image_height)
+    )
+  }
+
+  private fun getImageWithAuthority(uri: Uri): Bitmap? {
+    return ImageUtils.decodeUriStreamToSize(uri,
+      resources.getDimensionPixelSize(R.dimen.default_image_width),
+      resources.getDimensionPixelSize(R.dimen.default_image_height),
+      this
+    )
+  }
+
 }
 
 

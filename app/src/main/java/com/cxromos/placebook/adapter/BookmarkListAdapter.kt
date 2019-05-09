@@ -17,6 +17,13 @@ class BookmarkListAdapter(
   class ViewHolder(v: View, private val mapsActivity: MapsActivity) : RecyclerView.ViewHolder(v) {
     val nameTextView: TextView = v.findViewById(R.id.bookmarkNameTextView) as TextView
     val categoryImageView: ImageView = v.findViewById(R.id.bookmarkIcon) as ImageView
+
+    init {
+      v.setOnClickListener {
+        val bookmarkView = itemView.tag as MapsViewModel.BookmarkView
+        mapsActivity.moveToBookmark(bookmarkView)
+      }
+    }
   }
 
   fun setBookmarkData(bookmarks: List<MapsViewModel.BookmarkView>) {
@@ -24,17 +31,21 @@ class BookmarkListAdapter(
     notifyDataSetChanged()
   }
 
-  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookmarkListAdapter.ViewHolder {
-    val holder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.bookmark_item, parent, false), mapsActivity)
-    return holder
+  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    return ViewHolder(LayoutInflater.from(parent.context)
+      .inflate(R.layout.bookmark_item, parent, false), mapsActivity)
+  }
+
+  override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    val bookmarkData = bookmarkData ?: return
+    val bookmarkViewData = bookmarkData[position]
+    holder.itemView.tag = bookmarkViewData
+    holder.nameTextView.text = bookmarkViewData.name
+    holder.categoryImageView.setImageResource(R.drawable.ic_other)
   }
 
   override fun getItemCount(): Int {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
-
-  override fun onBindViewHolder(p0: BookmarkListAdapter.ViewHolder, p1: Int) {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    return bookmarkData?.size ?: 0
   }
 
 }
