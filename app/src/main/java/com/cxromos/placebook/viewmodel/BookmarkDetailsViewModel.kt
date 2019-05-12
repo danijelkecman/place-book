@@ -39,6 +39,17 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
     return bookmarkRepo.categories
   }
 
+  fun deleteBookmark(bookmarkDetailsView: BookmarkDetailsView) {
+    GlobalScope.launch {
+      val bookmark = bookmarkDetailsView.id?.let {
+        bookmarkRepo.getBookmark(it)
+      }
+      bookmark?.let {
+        bookmarkRepo.deleteBookmark(it)
+      }
+    }
+  }
+
   private fun bookmarkViewToBookmark(bookmarkView: BookmarkDetailsView): Bookmark? {
     val bookmark = bookmarkView.id?.let {
       bookmarkRepo.getBookmark(it)
@@ -56,12 +67,15 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
 
   private fun bookmarkToBookmarkView(bookmark: Bookmark): BookmarkDetailsView {
     return BookmarkDetailsView(
-        bookmark.id,
-        bookmark.name,
-        bookmark.phone,
-        bookmark.address,
-        bookmark.notes,
-        bookmark.category
+      bookmark.id,
+      bookmark.name,
+      bookmark.phone,
+      bookmark.address,
+      bookmark.notes,
+      bookmark.category,
+      bookmark.latitude,
+      bookmark.longitude,
+      bookmark.placeId
     )
   }
 
@@ -69,8 +83,10 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
   private fun mapBookmarkToBookmarkView(bookmarkId: Long) {
     val bookmark = bookmarkRepo.getLiveBookmark(bookmarkId)
     bookmarkDetailsView = Transformations.map(bookmark) { bookmark ->
-      val bookmarkView = bookmarkToBookmarkView(bookmark)
-      bookmarkView
+      bookmark?.let {
+        val bookmarkView = bookmarkToBookmarkView(bookmark)
+        bookmarkView
+      }
     }
   }
 
@@ -80,7 +96,10 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
       var phone: String = "",
       var address: String = "",
       var notes: String = "",
-      var category: String = ""
+      var category: String = "",
+      var latitude: Double = 0.0,
+      var longitude: Double = 0.0,
+      var placeId: String? = null
   ) {
 
     fun getImage(context: Context): Bitmap? {

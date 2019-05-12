@@ -1,6 +1,7 @@
 package com.cxromos.placebook.ui
 
 import android.Manifest
+import android.app.Activity
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,11 +13,15 @@ import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.view.WindowManager
+import android.widget.ProgressBar
 import com.cxromos.placebook.R
 import com.cxromos.placebook.adapter.BookmarkInfoWindowAdapter
 import com.cxromos.placebook.adapter.BookmarkListAdapter
 import com.cxromos.placebook.viewmodel.MapsViewModel
 import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException
+import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -28,12 +33,16 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
-import kotlinx.android.synthetic.main.activity_bookmark_detail.*
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+import kotlinx.android.synthetic.main.activity_bookmark_detail.toolbar
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.drawer_view_maps.*
+import kotlinx.android.synthetic.main.main_view_maps.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -51,6 +60,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
   companion object {
     const val EXTRA_BOOKMARK_ID = "com.cxromos.placebook.EXTRA_BOOKMARK_ID"
     private const val REQUEST_LOCATION = 1
+    private const val AUTOCOMPLETE_REQUEST_CODE = 2
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,9 +103,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
     map.setOnPoiClickListener {
       displayPoi(it)
     }
+    map.setOnMapLongClickListener {
+      newBookmark(it)
+    }
     map.setOnInfoWindowClickListener {
       handleInfoWindowClick(it)
     }
+    fab.setOnClickListener { searchAtCurrentLocation() }
   }
 
   private fun updateMapToLocation(location: Location) {
@@ -125,6 +139,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
   }
 
   private fun displayPoi(poi: PointOfInterest) {
+    showProgress()
     displayPoiGetPlaceStep(poi)
   }
 
@@ -146,6 +161,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
       val apiException = exception as ApiException
       val statusCode = apiException.statusCode
       Log.e(TAG, "Place not found with error message: ${exception.message} and error status code: $statusCode")
+      hideProgress()
     }
   }
 
@@ -163,6 +179,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
         val apiException = exception as ApiException
         val statusCode = apiException.statusCode
         Log.e(TAG, "Photo not found with error message: ${exception.message} and error status code: $statusCode")
+        hideProgress()
       }
     } else {
       displayPoiDisplayStep(place, null)
@@ -170,6 +187,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
   }
 
   private fun displayPoiDisplayStep(place: Place, photo: Bitmap?) {
+    hideProgress()
     val marker = map.addMarker(MarkerOptions()
       .position(place.latLng!!)
       .title(place.name)
@@ -281,6 +299,66 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
     val intent = Intent(this, BookmarkDetailsActivity::class.java)
     intent.putExtra(EXTRA_BOOKMARK_ID, bookmarkId)
     startActivity(intent)
+  }
+
+  private fun searchAtCurrentLocation() {
+    val bounds = map.projection.visibleRegion.latLngBounds
+
+    try {
+      val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, arrayListOf(Place.Field.NAME, Place.Field.LAT_LNG))
+        .setLocationBias(RectangularBounds.newInstance(bounds))
+        .build(this)
+
+      startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE)
+    } catch (e: GooglePlayServicesRepairableException) {
+      e.printStackTrace()
+    } catch (e: GooglePlayServicesNotAvailableException) {
+      e.printStackTrace()
+    }
+  }
+
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    showProgress()
+    when (requestCode) {
+      AUTOCOMPLETE_REQUEST_CODE -> {
+        if (resultCode == Activity.RESULT_OK && data != null) {
+          val place = Autocomplete.getPlaceFromIntent(data)
+          val location = Location("")
+          location.latitude = place.latLng!!.latitude
+          location.longitude = place.latLng!!.longitude
+          updateMapToLocation(location)
+
+          displayPoiGetPhotoStep(place)
+        }
+      }
+    }
+  }
+
+  private fun newBookmark(latLng: LatLng) {
+    GlobalScope.launch {
+      val bookmarkId = mapsViewModel.addBookmark(latLng)
+      bookmarkId?.let {
+        startBookmarkDetails(it)
+      }
+    }
+  }
+
+  private fun showProgress() {
+    progressBar.visibility = ProgressBar.VISIBLE
+    disableUserInteraction()
+  }
+
+  private fun hideProgress() {
+    progressBar.visibility = ProgressBar.GONE
+    enableUserInteraction()
+  }
+
+  private fun disableUserInteraction() {
+    window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
+  }
+
+  private fun enableUserInteraction() {
+    window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
   }
 }
 
