@@ -31,8 +31,15 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
     }
   }
 
-  private fun bookmarkViewToBookmark(bookmarkView: BookmarkDetailsView):
-      Bookmark? {
+  fun getCategoryResourceId(category: String): Int? {
+    return bookmarkRepo.getCategoryResourceId(category)
+  }
+
+  fun getCategories(): List<String> {
+    return bookmarkRepo.categories
+  }
+
+  private fun bookmarkViewToBookmark(bookmarkView: BookmarkDetailsView): Bookmark? {
     val bookmark = bookmarkView.id?.let {
       bookmarkRepo.getBookmark(it)
     }
@@ -42,6 +49,7 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
       bookmark.phone = bookmarkView.phone
       bookmark.address = bookmarkView.address
       bookmark.notes = bookmarkView.notes
+      bookmark.category = bookmarkView.category
     }
     return bookmark
   }
@@ -52,10 +60,12 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
         bookmark.name,
         bookmark.phone,
         bookmark.address,
-        bookmark.notes
+        bookmark.notes,
+        bookmark.category
     )
   }
 
+  @Suppress("NAME_SHADOWING")
   private fun mapBookmarkToBookmarkView(bookmarkId: Long) {
     val bookmark = bookmarkRepo.getLiveBookmark(bookmarkId)
     bookmarkDetailsView = Transformations.map(bookmark) { bookmark ->
@@ -69,7 +79,8 @@ class BookmarkDetailsViewModel(application: Application): AndroidViewModel(appli
       var name: String = "",
       var phone: String = "",
       var address: String = "",
-      var notes: String = ""
+      var notes: String = "",
+      var category: String = ""
   ) {
 
     fun getImage(context: Context): Bitmap? {

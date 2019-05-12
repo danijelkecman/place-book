@@ -6,7 +6,7 @@ import android.arch.persistence.room.RoomDatabase
 import android.content.Context
 import com.cxromos.placebook.model.Bookmark
 
-@Database(entities = [Bookmark::class], version = 2)
+@Database(entities = [Bookmark::class], version = 3, exportSchema = false)
 abstract class PlaceBookDatabase: RoomDatabase() {
     abstract fun bookmarkDao(): BookmarkDao
 

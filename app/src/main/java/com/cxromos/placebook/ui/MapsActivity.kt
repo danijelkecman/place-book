@@ -39,6 +39,8 @@ import kotlinx.coroutines.launch
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
+  private val TAG = MapsActivity::class.java.simpleName
+
   private lateinit var map: GoogleMap
   private lateinit var fusedLocationClient: FusedLocationProviderClient
   private lateinit var placesClient: PlacesClient
@@ -49,7 +51,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
   companion object {
     const val EXTRA_BOOKMARK_ID = "com.cxromos.placebook.EXTRA_BOOKMARK_ID"
     private const val REQUEST_LOCATION = 1
-    private val TAG = MapsActivity::class.java.simpleName
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,13 +129,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
   }
 
   private fun displayPoiGetPlaceStep(poi: PointOfInterest) {
-    var placesFields = listOf(
+    val placesFields = listOf(
       Place.Field.ID,
       Place.Field.NAME,
       Place.Field.ADDRESS,
       Place.Field.PHOTO_METADATAS,
       Place.Field.PHONE_NUMBER,
-      Place.Field.LAT_LNG
+      Place.Field.LAT_LNG,
+      Place.Field.TYPES
     )
     val request = FetchPlaceRequest.builder(poi.placeId, placesFields).build()
     placesClient.fetchPlace(request).addOnSuccessListener { response ->
@@ -182,7 +184,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.On
       .position(bookmark.location)
       .title(bookmark.name)
       .snippet(bookmark.phone)
-      .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+      .icon(bookmark.categoryResourceId?.let {
+        BitmapDescriptorFactory.fromResource(it)
+      })
       .alpha(0.8f)
     )
     marker.tag = bookmark

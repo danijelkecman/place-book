@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -40,7 +38,7 @@
                 android:maxHeight="300dp"
                 android:scaleType="fitCenter"
                 android:adjustViewBounds="true"
-                app:srcCompat="@drawable/default_photo"/>
+                app:srcCompat="@drawable/default_photo" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -52,25 +50,48 @@
                     android:id="@+id/textViewName"
                     style="@style/BookmarkLabel"
                     android:text="Name"/>
-
                 <EditText
                     android:id="@+id/editTextName"
                     style="@style/BookmarkEditText"
                     android:hint="Name"
-                    android:inputType="text"
-                    />
+                    android:inputType="text" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/textViewCategoryLabel"
+                    style="@style/BookmarkLabel"
+                    android:layout_weight='0.4'
+                    android:text="Category"/>
+                <ImageView
+                    android:id="@+id/imageViewCategory"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_other"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_gravity="bottom" />
+                <Spinner
+                    android:id="@+id/spinnerCategory"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight='1.4'
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="16dp" />
+            </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
                 <TextView
                     android:id="@+id/textViewNotes"
                     style="@style/BookmarkLabel"
                     android:text="Notes"/>
-
                 <EditText
                     android:id="@+id/editTextNotes"
                     style="@style/BookmarkEditText"
@@ -92,8 +113,7 @@
                     android:id="@+id/editTextPhone"
                     style="@style/BookmarkEditText"
                     android:hint="Phone number"
-                    android:inputType="phone"
-                    />
+                    android:inputType="phone" />
             </LinearLayout>
 
             <LinearLayout
@@ -105,13 +125,11 @@
                     android:id="@+id/textViewAddress"
                     style="@style/BookmarkLabel"
                     android:text="Address"/>
-
                 <EditText
                     android:id="@+id/editTextAddress"
                     style="@style/BookmarkEditText"
                     android:hint="Address"
-                    android:inputType="textMultiLine"
-                    />
+                    android:inputType="textMultiLine" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
